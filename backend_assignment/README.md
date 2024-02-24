@@ -2,14 +2,9 @@
 
 This guide will walk you through setting up and running the Django application on your local machine. Ensure you have Python, pip, and PostgreSQL installed before you start.
 
-## Step 1: Clone the Repository
+## Step 1: Extract Files from Zipped File
 
-Clone the repository to your local machine. Open a terminal and run:
-
-git clone [URL_of_Your_Repository]
-cd [Repository_Name]
-
-Replace `[URL_of_Your_Repository]` with the actual URL of your repository and `[Repository_Name]` with the name of the folder that contains your Django project.
+Extract the files from the zipped archive of the repository. Locate the zipped file in your system and use any file extraction tool or command line utility to unzip the contents into a folder of your choice.
 
 ## Step 2: Set Up a Virtual Environment
 
@@ -44,6 +39,7 @@ pip install -r requirements.txt
 
 3. Update the database configuration in `todo/todo/settings.py` to match your PostgreSQL settings:
 
+   ```python
    DATABASES = {
        'default': {
            'ENGINE': 'django.db.backends.postgresql',
@@ -54,6 +50,7 @@ pip install -r requirements.txt
            'PORT': '5432',
        }
    }
+   ```
 
    Ensure you replace `your_db_name`, `your_db_user`, and `your_db_password` with the actual database name, user, and password.
 
@@ -71,11 +68,17 @@ python manage.py runserver
 
 The server will start, and you should see something like this:
 
+```shell
 Starting development server at http://127.0.0.1:8000/
 Quit the server with CONTROL-C.
+```
 
 ## Step 7: Making Requests Using Postman
 
 With the server running, you can now use Postman to make requests to your Django application. Here is a link to a Postman collection with sample requests for the application:
 
 [Postman Collection with Sample Requests](https://richard-quayson.postman.co/workspace/My-Workspace~8623b0d5-b357-477a-88e8-966a777ca0f6/folder/22193987-ba80c1be-c9c6-4633-90fa-30069ece7821?action=share&creator=22193987&ctx=documentation)
+
+## Step 8: Link to GitHub repository:
+
+Find the link to the repository [here]().
