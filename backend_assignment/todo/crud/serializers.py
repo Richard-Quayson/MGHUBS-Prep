@@ -1,76 +1,81 @@
-import re
 from rest_framework import serializers
-from .models import Account
+from django.utils import timezone
+from .models import ToDo, PriorityLevel
+from account.models import Account
 
-EMAIL_REGEX = r"^[^0-9!@#$%^&*(+=)\\[\].></{}`]\w+([\.-_]?\w+)*@([a-z\d-]+)\.([a-z]{2,})(\.[a-z]{2,})?$"
-PASSWORD_REGEX = r"^(?=(.*[A-Z]){2,})(?=(.*[a-z]){2,})(?=(.*\d){1,})(?=(.*[!#$%&()*+,-.:;<=>?@_~]){1,}).{8,}$"
 
-
-class AccountRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True, 
-        required=True
-    )
-    confirm_password = serializers.CharField(
-        write_only=True, 
-        required=True
-    )
+class ToDoSerializer(serializers.ModelSerializer):
+    """
+    serializes the ToDo model
+    """
+    user = serializers.SerializerMethodField("get_user")
 
     class Meta:
-        model = Account
+        model = ToDo
         fields = [
-            "id", "firstname", "lastname", "email", "password", "confirm_password"
+            "id", "user", "title", "description", "priority", "due_date", "time", "completed", "created_at", "updated_at"
         ]
-    
-    def validate_firstname(self, value):
-        if not value.isalpha():
-            raise serializers.ValidationError("First name must contain only letters")
-        
-        return value
-    
-    def validate_lastname(self, value):
-        if not value.isalpha():
-            raise serializers.ValidationError("Last name must contain only letters")
-        
-        return value
-    
-    def validate_email(self, value):
-        if not re.match(EMAIL_REGEX, value):
-            raise serializers.ValidationError("Invalid email address")
-        
-        if Account.objects.filter(email=value).exists():
-            raise serializers.ValidationError("An account with this email already exists!")
-        
-        return value
-    
-    def validate_password(self, value):
-        if not re.match(PASSWORD_REGEX, value):
-            raise serializers.ValidationError("Invalid password. Password must contain at least 8 characters, 2 uppercase letters, 2 lowercase letters, 1 digit and 1 special character.")
-        
-        return value
-    
-    def validate_confirm_password(self, value):
-        if not re.match(PASSWORD_REGEX, value):
-            raise serializers.ValidationError("Invalid password. Password must contain at least 8 characters, 2 uppercase letters, 2 lowercase letters, 1 digit and 1 special character.")
-        
-        return value
-    
-    def create(self, **validated_data):      
-        return Account.objects.create(**validated_data)
-    
-    def save(self):
-        user_account = Account(
-            firstname=self.validated_data["firstname"],
-            lastname=self.validated_data["lastname"],
-            email=self.validated_data["email"]
-        )
-        
-        password = self.validated_data["password"]
-        confirm_password = self.validated_data["confirm_password"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
-        if password != confirm_password:
-            raise serializers.ValidationError("Passwords do not match!")
-        else:
-            user_account.set_password(password)
-            user_account.save()
-            return user_account
+    def get_user(self, instance):
+        return self.context["request"].user.id
+
+    def validate_user(self, value):
+        """
+        validates the user field
+        """
+
+        if not Account.objects.filter(id=value).exists():
+            raise serializers.ValidationError("User does not exist!")
+
+        return value
+    
+    def validate_due_date(self, value):
+        """
+        validates the due_date field
+        
+        expected date format: YYYY-MM-DD
+            e.g. 2024-02-31
+        """
+
+        if value < value.today():
+            raise serializers.ValidationError("Due date cannot be in the past!")
+
+        return value
+    
+    def validate_time(self, value):
+        """
+        validates the time field
+        
+        expected time format: HH:MM
+            e.g. 23:59
+        """
+
+        return value
+    
+    def validate_completed(self, value):
+        return False            # since a ToDo object is created as not completed by default
+    
+    def validate_priority(self, value):
+        if value not in [priority[0] for priority in PriorityLevel.choices]:
+            raise serializers.ValidationError("Invalid priority level!")
+        
+        return value
+    
+    def create(self, validated_data):
+        return ToDo.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get("title", instance.title)
+        instance.description = validated_data.get("description", instance.description)
+        instance.priority = validated_data.get("priority", instance.priority)
+        instance.due_date = validated_data.get("due_date", instance.due_date)
+        instance.time = validated_data.get("time", instance.time)
+        instance.updated_at = validated_data.get("updated_at", timezone.now())
+        instance.save()
+        return instance
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["user"] = f"{instance.user.firstname} {instance.user.lastname}"
+        return representation
