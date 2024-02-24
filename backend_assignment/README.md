@@ -81,4 +81,4 @@ With the server running, you can now use Postman to make requests to your Django
 
 ## Step 8: Link to GitHub repository:
 
-Find the link to the repository [here]().
+Find the link to the repository [here](https://github.com/Richard-Quayson/MGHUBS-Prep).
